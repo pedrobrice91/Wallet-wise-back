@@ -1,30 +1,29 @@
 from flask import Flask, jsonify, request
 from flask_migrate import Migrate
-from models import db, User
+from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
 
-app = Flask(__name__) #__main__
+app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
 db.init_app(app)
 Migrate(app, db)
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Hola desde Flask PT 50"
+    return "<h1>Hola desde Flask PT 50</h1>"
 
-#CRUD
-
-@app.route("/user", methods=["POST"]) #Create
+@app.route("/user", methods=["POST"])
 def user():
-    data = request.get_json()
-    user = User()
-    user.name = data["name"]
-    user.email = data["email"]
-    user.password = data["password"]
-
-    db.session.add(user)
-    db.session.commit()
-
-    return "Usuario creado"
+   data = request.get_json()
+   user = User()
+   user.first_name = data["first_name"]
+   user.last_name = data["last_name"]
+   user.email = data["email"]
+   user.password = data["password"]
+   
+   db.session.add(user) 
+   db.session.commit()
+    
+   return jsonify ({"msg":"Usuario creado"}), 200
 
 @app.route("/users", methods=["GET"]) #Read
 def get_users():
@@ -56,7 +55,6 @@ def update_user(user_id):
             return jsonify("Usuario eliminado"), 201
         else:
             return jsonify("Usuario no encontrado"), 404
-
-
+        
 if __name__ == "__main__":
-    app.run(host="localhost", port=5000, debug=True)
+    app.run(host="localhost", port=5050, debug=True)
