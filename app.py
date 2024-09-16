@@ -1,11 +1,20 @@
 from flask import Flask, jsonify, request
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
+from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
+from flask_cors import CORS
 
 app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
+app.config["JWT_SECRET_KEY"] = "secret_key"
+app.config["SECRET_KEY"] = "contrasena-super-segura"
+JWTManager(app)
+bcrypt = Bcrypt(app)
 db.init_app(app)
 Migrate(app, db)
+CORS(app)
 
 @app.route("/", methods=["GET"])
 def home():
@@ -13,17 +22,46 @@ def home():
 
 @app.route("/user", methods=["POST"])
 def user():
-   data = request.get_json()
-   user = User()
-   user.first_name = data["first_name"]
-   user.last_name = data["last_name"]
-   user.email = data["email"]
-   user.password = data["password"]
-   
-   db.session.add(user) 
-   db.session.commit()
+    data = request.get_json()
+    user = User()
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Correo invalido"}), 400
+
+    if find_user_by_email(email):
+        return jsonify({"msg": "El usuario ya existe"}), 400
+
+    if not password or not is_valid_password(password):
+        return jsonify({"msg": "Contraseña invalida"}), 400
+
+    user.email = email
+    user.password = hash_password(password, bcrypt)
+    user.first_name = first_name
+    user.last_name = last_name
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"msg": "Usuario creado"}), 201
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Invalid email format"}), 400
     
-   return jsonify ({"msg":"Usuario creado"}), 200
+    user = find_user_by_email(email)
+    if user and check_password(user.password, password, bcrypt):
+        access_token = create_access_token(identity=email)
+        return jsonify({"msg": "Éxito", "access_token": access_token}), 200
+    return jsonify({"msg": "invalid username or password"}), 200
 
 @app.route("/users", methods=["GET"]) #Read
 def get_users():
