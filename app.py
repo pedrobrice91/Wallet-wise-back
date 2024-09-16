@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
 from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
+from flask_cors import CORS
 
 app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
@@ -13,6 +14,7 @@ JWTManager(app)
 bcrypt = Bcrypt(app)
 db.init_app(app)
 Migrate(app, db)
+CORS(app)
 
 @app.route("/", methods=["GET"])
 def home():
