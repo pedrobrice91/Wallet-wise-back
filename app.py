@@ -2,10 +2,10 @@ from flask import Flask, jsonify, request
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_bcrypt import Bcrypt
-from models import db, User
+from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
 import re
 
-app = Flask(__name__) #__main__
+app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
 app.config["JWT_SECRET_KEY"] = "secret_key"
 app.config["SECRET_KEY"] = "contrasena-super-segura"
@@ -16,11 +16,9 @@ Migrate(app, db)
 
 @app.route("/", methods=["GET"])
 def home():
-    return "Hola desde Flask PT 50"
+    return "<h1>Hola desde Flask PT 50</h1>"
 
-#CRUD
-
-@app.route("/user", methods=["POST"]) #Create
+@app.route("/user", methods=["POST"])
 def user():
     data = request.get_json()
     user = User()
@@ -92,7 +90,6 @@ def update_user(user_id):
             return jsonify("Usuario eliminado"), 201
         else:
             return jsonify("Usuario no encontrado"), 404
-
-
+        
 if __name__ == "__main__":
-    app.run(host="localhost", port=5000, debug=True)
+    app.run(host="localhost", port=5050, debug=True)
