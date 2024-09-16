@@ -55,13 +55,13 @@ def login():
     password = data.get("password")
 
     if not email or not is_valid_email(email):
-        return jsonify({"msg": "Correo invalido"}), 400
+        return jsonify({"msg": "Invalid email format"}), 400
     
     user = find_user_by_email(email)
     if user and check_password(user.password, password, bcrypt):
         access_token = create_access_token(identity=email)
         return jsonify({"msg": "Éxito", "access_token": access_token}), 200
-    return jsonify({"msg": "Credenciales incorrectas"}), 400
+    return jsonify({"msg": "invalid username or password"}), 200
 
 @app.route("/users", methods=["GET"]) #Read
 def get_users():
