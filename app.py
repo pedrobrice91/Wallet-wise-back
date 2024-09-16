@@ -3,7 +3,7 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
-import re
+from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
 
 app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
@@ -22,43 +22,44 @@ def home():
 def user():
     data = request.get_json()
     user = User()
-    name = data["name"]
-    email = data["email"]
-    password = data["password"]
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
 
-    if email is not None:
-        email_re = r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$"
-        if re.match(email_re, email):
-            user.email = email
-        else:
-            return jsonify({
-                "msg": "Correo con formato invalido"
-            }), 400
-    else:
-        return jsonify({
-            "msg": "El email es requerido"
-        }), 400
-    
-    if password is not None:
-        password_re = r"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$"
-        if re.match(password_re, password):
-            password_hash = bcrypt.generate_password_hash(password)
-            user.password = password_hash
-        else:
-            return jsonify({
-                "msg": "Formato de contraseña no valido"
-            }), 400
-    else:
-        return jsonify({
-            "msg": "La contraseña es requerida"
-        }), 400
-    
-    user.name = name
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Correo invalido"}), 400
+
+    if find_user_by_email(email):
+        return jsonify({"msg": "El usuario ya existe"}), 400
+
+    if not password or not is_valid_password(password):
+        return jsonify({"msg": "Contraseña invalida"}), 400
+
+    user.email = email
+    user.password = hash_password(password, bcrypt)
+    user.first_name = first_name
+    user.last_name = last_name
 
     db.session.add(user)
     db.session.commit()
 
-    return "Usuario creado"
+    return jsonify({"msg": "Usuario creado"}), 201
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Correo invalido"}), 400
+    
+    user = find_user_by_email(email)
+    if user and check_password(user.password, password, bcrypt):
+        access_token = create_access_token(identity=email)
+        return jsonify({"msg": "Éxito", "access_token": access_token}), 200
+    return jsonify({"msg": "Credenciales incorrectas"}), 400
 
 @app.route("/users", methods=["GET"]) #Read
 def get_users():
