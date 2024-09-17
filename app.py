@@ -60,7 +60,13 @@ def login():
     user = find_user_by_email(email)
     if user and check_password(user.password, password, bcrypt):
         access_token = create_access_token(identity=email)
-        return jsonify({"msg": "Éxito", "access_token": access_token}), 200
+        return jsonify({
+            "msg": "Success",
+            "access_token": access_token,
+            "user_id": user.id,
+            "user_first_name": user.first_name,
+            "user_last_name": user.last_name
+        }), 200
     return jsonify({"msg": "invalid username or password"}), 200
 
 @app.route("/users", methods=["GET"]) #Read
