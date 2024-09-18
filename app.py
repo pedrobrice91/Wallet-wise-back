@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from flask_bcrypt import Bcrypt
-from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Count, Category
+from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Account, Category
 from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
 from flask_cors import CORS
 
@@ -67,32 +67,39 @@ def login():
 def get_users():
     users = User.query.all()
     users = list(map(lambda user: user.serialize(), users))
-
+    
     return jsonify(users)
 
 @app.route("/user/<int:user_id>", methods=["PUT", "DELETE"])
 def update_user(user_id):
-    if request.method == "PUT": #Update
         user = User.query.get(user_id)
-        if user is not None:
-            data = request.get_json()
-            user.name = data["name"]
-            if data["password"]:
-                return jsonify("No puedes modificar la contraseña"),400
 
+        if user is None:
+            return jsonify("User not found"), 404
+        
+        if request.method == "PUT": #Update
+            data = request.get_json()
+
+            if data.get("email"):
+               return jsonify("The email can't be updated"), 400
+            
+            if data.get("first_name"):           
+                user.first_name = data["first_name"]
+
+            if data.get("last_name"):
+                user.last_name = data["last_name"]
+
+            if data.get("password"):
+                user.password = data["password"]
+          
             db.session.commit()
             return jsonify(user.serialize()), 200
-        else:
-            return jsonify("Usuario no encontrado"), 404
-    else:
-        user = User.query.get(user_id) #Delete
-        if user is not None:
+
+        if request.method == "DELETE":  # Delete
             db.session.delete(user)
             db.session.commit()
+            return jsonify(f"User {user_id} deleted"), 200
+          
 
-            return jsonify("Usuario eliminado"), 201
-        else:
-            return jsonify("Usuario no encontrado"), 404
-        
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
