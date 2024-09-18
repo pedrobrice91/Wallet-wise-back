@@ -95,7 +95,7 @@ def update_user(user_id):
             db.session.delete(user)
             db.session.commit()
             return jsonify(f"User {user_id} deleted"), 200
-
+#tipo de movimiento
 @app.route("/type_of_movements", methods=["GET"]) #Read
 def get_type_of_movements():
     type_of_movements = Type_of_movement.query.all()
@@ -130,8 +130,8 @@ def type_of_movement():
 
     return jsonify({"msg": "Usuario creado"}), 201
     
-@app.route("/user/<int:user_id>", methods=["PUT", "DELETE"])
-def update_type_of_movement(user_id):
+@app.route("/type_of_movement/<int:type_of_movements_id>", methods=["PUT", "DELETE"])
+def update_type_of_movement(type_of_movements_id):
         user = User.query.get(user_id)
 
         if user is None:
@@ -159,5 +159,134 @@ def update_type_of_movement(user_id):
             db.session.delete(user)
             db.session.commit()
             return jsonify(f"User {user_id} deleted"), 200
+#transacciones
+@app.route("/transactions", methods=["GET"]) #Read
+def get_transaction():
+    type_of_movements = Type_of_movement.query.all()
+    type_of_movements = list (map(lambda type_of_movement: type_of_movement.serialize(), type_of_movements))
+    return jsonify(type_of_movements)
+
+@app.route("/transaction", methods=["POST"]) #Create
+def transaction():
+    data = request.get_json()
+    user = User()
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Correo invalido"}), 400
+
+    if find_user_by_email(email):
+        return jsonify({"msg": "El usuario ya existe"}), 400
+
+    if not password or not is_valid_password(password):
+        return jsonify({"msg": "Contraseña invalida"}), 400
+
+    user.email = email
+    user.password = hash_password(password, bcrypt)
+    user.first_name = first_name
+    user.last_name = last_name
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"msg": "Usuario creado"}), 201
+    
+@app.route("/transaction/<int:transaction_id>", methods=["PUT", "DELETE"])
+def update_transaction(transactions_id):
+        user = User.query.get(user_id)
+
+        if user is None:
+            return jsonify("User not found"), 404
+        
+        if request.method == "PUT": #Update
+            data = request.get_json()
+
+            if data.get("email"):
+               return jsonify("The email can't be updated"), 400
+            
+            if data.get("first_name"):           
+                user.first_name = data["first_name"]
+
+            if data.get("last_name"):
+                user.last_name = data["last_name"]
+
+            if data.get("password"):
+                user.password = data["password"]
+          
+            db.session.commit()
+            return jsonify(user.serialize()), 200
+
+        if request.method == "DELETE":  # Delete
+            db.session.delete(user)
+            db.session.commit()
+            return jsonify(f"User {user_id} deleted"), 200
+#categoria
+@app.route("/categorys", methods=["GET"]) #Read
+def get_category():
+    type_of_movements = Type_of_movement.query.all()
+    type_of_movements = list (map(lambda type_of_movement: type_of_movement.serialize(), type_of_movements))
+    return jsonify(type_of_movements)
+
+@app.route("/category", methods=["POST"]) #Create
+def category():
+    data = request.get_json()
+    user = User()
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not is_valid_email(email):
+        return jsonify({"msg": "Correo invalido"}), 400
+
+    if find_user_by_email(email):
+        return jsonify({"msg": "El usuario ya existe"}), 400
+
+    if not password or not is_valid_password(password):
+        return jsonify({"msg": "Contraseña invalida"}), 400
+
+    user.email = email
+    user.password = hash_password(password, bcrypt)
+    user.first_name = first_name
+    user.last_name = last_name
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({"msg": "Usuario creado"}), 201
+    
+@app.route("/category/<int:category_id>", methods=["PUT", "DELETE"])
+def update_category(category_id):
+        user = User.query.get(user_id)
+
+        if user is None:
+            return jsonify("User not found"), 404
+        
+        if request.method == "PUT": #Update
+            data = request.get_json()
+
+            if data.get("email"):
+               return jsonify("The email can't be updated"), 400
+            
+            if data.get("first_name"):           
+                user.first_name = data["first_name"]
+
+            if data.get("last_name"):
+                user.last_name = data["last_name"]
+
+            if data.get("password"):
+                user.password = data["password"]
+          
+            db.session.commit()
+            return jsonify(user.serialize()), 200
+
+        if request.method == "DELETE":  # Delete
+            db.session.delete(user)
+            db.session.commit()
+            return jsonify(f"User {user_id} deleted"), 200
+
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
