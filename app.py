@@ -16,9 +16,6 @@ db.init_app(app)
 Migrate(app, db)
 CORS(app)
 
-@app.route("/", methods=["GET"])
-def home():
-    return "<h1>Hola desde Flask PT 50</h1>"
 
 @app.route("/user", methods=["POST"])
 def user():
