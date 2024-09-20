@@ -27,13 +27,13 @@ def user():
     password = data.get("password")
 
     if not email or not is_valid_email(email):
-        return jsonify({"msg": "Correo invalido"}), 400
+        return jsonify({"msg": "Invalid email format"}), 400
 
     if find_user_by_email(email):
-        return jsonify({"msg": "El usuario ya existe"}), 400
+        return jsonify({"msg": "This email address is already registered"}), 409
 
     if not password or not is_valid_password(password):
-        return jsonify({"msg": "Contraseña invalida"}), 400
+        return jsonify({"msg": "Invalid password format"}), 400
 
     user.email = email
     user.password = hash_password(password, bcrypt)
@@ -43,7 +43,7 @@ def user():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({"msg": "Usuario creado"}), 201
+    return jsonify({"msg": "Account created successfully"}), 201
 
 @app.route("/login", methods=["POST"])
 def login():
@@ -57,8 +57,14 @@ def login():
     user = find_user_by_email(email)
     if user and check_password(user.password, password, bcrypt):
         access_token = create_access_token(identity=email)
-        return jsonify({"msg": "Éxito", "access_token": access_token}), 200
-    return jsonify({"msg": "invalid username or password"}), 200
+        return jsonify({
+            "msg": "Success",
+            "access_token": access_token,
+            "user_id": user.id,
+            "user_first_name": user.first_name,
+            "user_last_name": user.last_name
+        }), 200
+    return jsonify({"msg": "Invalid username or password"}), 401
 
 @app.route("/users", methods=["GET"]) #Read
 def get_users():
