@@ -108,8 +108,7 @@ class Transaction(db.Model):
         return {
             "id":self.id,
             "name":self.name,
-            "category_id":self.category_id,
-            "movement_id":self.movement_id
+            "category_id":self.category_id
         }
 
 class Category(db.Model):
@@ -123,7 +122,7 @@ class Category(db.Model):
         return {
             "id":self.id,
             "name":self.name,
-            "type_of_movement_id":self.category_id
+            "type_of_movement_id":self.type_of_movement_id
         }
 
 class Type_of_movement(db.Model):
