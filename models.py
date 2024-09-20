@@ -1,5 +1,5 @@
+from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
-import datetime
 
 db = SQLAlchemy()
 
@@ -9,25 +9,25 @@ class User(db.Model):
     first_name = db.Column(db.String)
     last_name = db.Column(db.String)
     email = db.Column(db.String(200), nullable=False, unique=True)
-    password = db.Column(db.String(100), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
-    count = db.relationship("Count")
+    password = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    account = db.relationship("Account")
 
-def serialize(self):
+    def serialize(self):
         return {
-            "id":self.id,
-            "first_name":self.first_name,
-            "last_name":self.last_name,
-            "email":self.email,
-            "password":self.password,
-            "created_at":self.created_at
+            "id": self.id,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
+            "email": self.email,
+            "created_at": self.created_at
         }
 
-class Count(db.Model):
-    __tablename__ = "count"
+    
+class Account(db.Model):
+    __tablename__ = "account"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     goal = db.relationship("Goal")
     movement = db.relationship("Movement")
@@ -45,10 +45,10 @@ class Goal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
     fulfillment_amount = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
+    created_at = db.Column(db.DateTime, default=datetime.now())
     estimated_monthly = db.Column(db.String(200))
     monthly_contribution = db.Column(db.Integer)
-    count_id = db.Column(db.Integer, db.ForeignKey("count.id"))
+    account_id = db.Column(db.Integer, db.ForeignKey("account.id"))
     movement_goal = db.relationship("Movement_goal")
 
 def serialize(self):
@@ -59,7 +59,7 @@ def serialize(self):
             "created_at":self.created_at,
             "estimated_monthly":self.estimated_monthly,
             "monthly_contribution":self.monthly_contribution,
-            "count_id":self.count_id
+            "account_id":self.account_id
         }
 
 class Movement(db.Model):
@@ -68,8 +68,8 @@ class Movement(db.Model):
     category = db.Column(db.String(200))
     transaccion = db.Column(db.String(200))
     amount = db.Column(db.Integer)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.now())
-    count_id = db.Column(db.Integer, db.ForeignKey("count.id"))
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    account_id = db.Column(db.Integer, db.ForeignKey("account.id"))
     movement_goal = db.relationship("Movement_goal")
 
 def serialize(self):
@@ -79,7 +79,7 @@ def serialize(self):
             "transaccion":self.transaccion,
             "amount":self.amount,
             "created_at":self.created_at,
-            "count_id":self.count_id,
+            "account_id":self.account_id,
         }
 
 class Movement_goal(db.Model):
@@ -104,7 +104,7 @@ class Transaction(db.Model):
     name = db.Column(db.String(200))
     category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
     movement_id = db.Column(db.Integer, db.ForeignKey("movement.id")) 
-    movement = db.relationship("Movement", backref=db.backref('transactions', lazy=True))  
+    movement = db.relationship("Movement", backref=db.backref('transaction', lazy=True))  
 
 def serialize(self):
         return {
