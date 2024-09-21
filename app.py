@@ -9,7 +9,6 @@ import requests
 import jwt
 from functools import wraps
 import os
-import json
 
 
 app = Flask(__name__) 
@@ -22,15 +21,11 @@ db.init_app(app)
 Migrate(app, db)
 CORS(app)
 
-app.config["CLERK_JWKS_URL"] = os.getenv("CLERK_JWKS_URL")
-app.config["CLERK_AUDIENCE"] = os.getenv("CLERK_AUDIENCE")
-app.config["CLERK_ISSUER"] = os.getenv("CLERK_ISSUER")
-
 
 @app.route("/user", methods=["POST"])
 def user():
     data = request.get_json()
-    user = User()
+
     first_name = data.get("first_name")
     last_name = data.get("last_name")
     email = data.get("email")
@@ -45,6 +40,7 @@ def user():
     if not password or not is_valid_password(password):
         return jsonify({"msg": "Invalid password format"}), 400
 
+    user = User()
     user.email = email
     user.password = hash_password(password, bcrypt)
     user.first_name = first_name
@@ -55,20 +51,25 @@ def user():
 
     return jsonify({"msg": "Account created successfully"}), 201
 
+
 @app.route("/login_google", methods=["POST"])
 def login_google():
     #comprobar que la información del front llegue al backend
-    data = request.get_json()
-    #return jsonify(data)
-    
-    user = User.query.filter_by(email=data.email).first()
-    access_token = create_access_token(identity=data.email)
-    if User is not None:
+    data = request.get_json()    
+    user = User.query.filter_by(email=data["email"]).first()
+    access_token = create_access_token(identity=data["email"])
+    if user is not None:
         return jsonify({
             "msg":"Success",
             "access_token": access_token,
         }), 200
     else:
+        user = User()
+        
+        user.first_name = data["first_name"]
+        user.last_name = data["last_name"]
+        user.email = data["email"]
+
         db.session.add(user)
         db.session.commit()
         return jsonify({
@@ -101,6 +102,7 @@ def login():
     return jsonify({"msg": "Invalid username or password"}), 401
 
 @app.route("/users", methods=["GET"]) #Read
+@jwt_required()
 def get_users():
     users = User.query.all()
     users = list(map(lambda user: user.serialize(), users))
