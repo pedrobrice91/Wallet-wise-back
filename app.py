@@ -5,6 +5,12 @@ from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Account, Category
 from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
 from flask_cors import CORS
+import requests
+import jwt
+from functools import wraps
+import os
+import json
+
 
 app = Flask(__name__) 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
@@ -15,6 +21,10 @@ bcrypt = Bcrypt(app)
 db.init_app(app)
 Migrate(app, db)
 CORS(app)
+
+app.config["CLERK_JWKS_URL"] = os.getenv("CLERK_JWKS_URL")
+app.config["CLERK_AUDIENCE"] = os.getenv("CLERK_AUDIENCE")
+app.config["CLERK_ISSUER"] = os.getenv("CLERK_ISSUER")
 
 
 @app.route("/user", methods=["POST"])
@@ -44,6 +54,30 @@ def user():
     db.session.commit()
 
     return jsonify({"msg": "Account created successfully"}), 201
+
+@app.route("/login_google", methods=["POST"])
+def login_google():
+    #comprobar que la información del front llegue al backend
+    data = request.get_json()
+    #return jsonify(data)
+    
+    user = User.query.filter_by(email=data.email).first()
+    access_token = create_access_token(identity=data.email)
+    if User is not None:
+        return jsonify({
+            "msg":"Success",
+            "access_token": access_token,
+        }), 200
+    else:
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({
+            "first_name": data.first_name,
+            "last_name": data.lastname,
+            "email": data.email,
+            "access_token": access_token
+
+        }), 201
 
 @app.route("/login", methods=["POST"])
 def login():
