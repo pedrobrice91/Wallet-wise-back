@@ -73,11 +73,10 @@ def login_google():
         db.session.add(user)
         db.session.commit()
         return jsonify({
-            "first_name": data.first_name,
-            "last_name": data.lastname,
-            "email": data.email,
-            "access_token": access_token
-
+            "first_name": data["first_name"],
+            "last_name": data["last_name"],
+            "email": data["email"],
+            "access_token": access_token,
         }), 201
 
 @app.route("/login", methods=["POST"])
