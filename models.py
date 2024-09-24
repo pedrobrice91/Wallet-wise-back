@@ -32,13 +32,13 @@ class Account(db.Model):
     goal = db.relationship("Goal")
     movement = db.relationship("Movement")
 
-def serialize(self):
-        return {
-            "id":self.id,
-            "name":self.name,
-            "created_at":self.created_at,
-            "user_id":self.user_id
-        }
+    def serialize(self):
+            return {
+                "id":self.id,
+                "name":self.name,
+                "created_at":self.created_at,
+                "user_id":self.user_id
+            }
 
 class Goal(db.Model):
     __tablename__ = "goal"
