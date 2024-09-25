@@ -121,35 +121,7 @@ def type_of_movement():
         db.session.commit()
 
         return jsonify({"msg": "Tipo de movimiento creado"}), 201
-
-
         type_of_movement_id = Type_of_movement.query.get(type_of_movement_id)
-
-        if user is None:
-            return jsonify("User not found"), 404
-        
-        if request.method == "PUT": #Update
-            data = request.get_json()
-
-            if data.get("email"):
-               return jsonify("The email can't be updated"), 400
-            
-            if data.get("first_name"):           
-                user.first_name = data["first_name"]
-
-            if data.get("last_name"):
-                user.last_name = data["last_name"]
-
-            if data.get("password"):
-                user.password = data["password"]
-          
-            db.session.commit()
-            return jsonify(user.serialize()), 200
-
-        if request.method == "DELETE":  # Delete
-            db.session.delete(user)
-            db.session.commit()
-            return jsonify(f"User {user_id} deleted"), 200
 #categoria
 @app.route("/categorys", methods=["GET"])#Read
 def get_category():
