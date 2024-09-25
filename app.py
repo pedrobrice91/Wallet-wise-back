@@ -213,6 +213,137 @@ def update_state_flow(account_id):
     db.session.commit()
     return jsonify(account.serialize()), 200
  
+@app.route("/type_of_movements", methods=["GET"]) #Read
+def get_type_of_movements():
+    type_of_movements = Type_of_movement.query.all()
+    print(type_of_movements[0].serialize())
+    type_of_movements = list (map(lambda type_of_movement: type_of_movement.serialize(), type_of_movements))
+    return jsonify(type_of_movements)
+
+@app.route("/type_of_movement", methods=["POST"])#Create
+def type_of_movement():
+        data = request.get_json()
+        
+        if isinstance(data, list):
+            if len(data) == 0:
+                return jsonify({"error": "No se proporcionaron datos"}), 400
+            data = data[0]
+        
+        if "name" not in data:
+            return jsonify({"error": "El campo 'name' es requerido"}), 400
+        
+        type_of_movement = Type_of_movement()
+        type_of_movement.name = data["name"]
+
+        db.session.add(type_of_movement)
+        db.session.commit()
+
+        return jsonify({"msg": "Tipo de movimiento creado"}), 201
+
+@app.route("/type_of_movement/<int:type_of_movements_id>", methods=["PUT", "DELETE"])
+def update_type_of_movement(type_of_movements_id):
+        return jsonify({"msg": "Transacción creada"}), 201
+
+@app.route("/categorys", methods=["GET"])#Read
+def get_category():
+    category = Category.query.all()
+    category = list(map(lambda category:category.serialize(), category))
+    return jsonify(category)
+
+@app.route("/category/<int:category_id>", methods=["PUT", "DELETE"])
+def update_category(category_id):
+        category = Category.query.get(category_id)
+
+        if category is None:
+            return jsonify("category not found"), 404
+        
+        if request.method == "PUT": #Update
+            data = request.get_json()
+            
+            if data.get("name"):           
+                category.name = data["name"]
+
+            if data.get("type_of_movement_id"):
+                category.type_of_movement_id = data["type_of_movement_id"]
+          
+            db.session.commit()
+            return jsonify(category.serialize()), 200
+
+        if request.method == "DELETE":  # Delete
+            db.session.delete(category)
+            db.session.commit()
+            return jsonify(f"Category {category_id} deleted"), 200
+#transacciones
+@app.route("/category", methods=["POST"])#Create
+def category():
+    
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos"}), 400
+        
+        category = Category()
+        
+        if "name" not in data or "type_of_movement_id" not in data:
+            return jsonify({"error": "Faltan campos requeridos (name o type_of_movement_id)"}), 400
+        
+        category.name = data["name"]
+        category.type_of_movement_id = data["type_of_movement_id"]
+        
+        db.session.add(category)
+        db.session.commit()
+
+        return jsonify({"msg": "Transacción creada"}), 201
+
+@app.route("/transactions", methods=["GET"])#Read
+def get_transaction():
+    transaction = Transaction.query.all()
+    transaction = list(map(lambda transaction:transaction.serialize(), transaction))
+    return jsonify(transaction)
+
+@app.route("/transaction", methods=["POST"])#Create
+def transaction():
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"error": "No se proporcionaron datos"}), 400
+        
+        transaction = Transaction()
+        
+        if "name" not in data or "category_id" not in data:
+            return jsonify({"error": "Faltan campos requeridos (name o category_id)"}), 400
+        
+        transaction.name = data["name"]
+        transaction.category_id = data["category_id"]
+        
+        db.session.add(transaction)
+        db.session.commit()
+
+        return jsonify({"msg": "Transacción creada"}), 201
+
+@app.route("/transaction/<int:transaction_id>", methods=["PUT", "DELETE"])
+def update_transaction(transaction_id):
+        transaction = Transaction.query.get(transaction_id)
+        
+        if transaction is None:
+            return jsonify("Transaction not found"), 404
+        
+        if request.method == "PUT": #Update
+            data = request.get_json()
+
+            if data.get("name"):
+                transaction.name = data["name"]
+
+            if data.get("category_id"):
+                transaction.category_id = data["category_id"]
+
+            db.session.commit()
+            return jsonify(transaction.serialize()), 200
+
+        if request.method == "DELETE":  #Delete
+            db.session.delete(transaction)
+            db.session.commit()
+            return jsonify(f"transaction {transaction_id} deleted"), 200
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
