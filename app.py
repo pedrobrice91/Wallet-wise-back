@@ -174,7 +174,6 @@ def account():
     if request.method == "GET":
         accounts = Account.query.filter_by(user_id=user_id).all()
         accounts = list(map(lambda account: account.serialize(), accounts))
-
         return jsonify(accounts), 200
     
     if request.method == "POST":
@@ -182,6 +181,7 @@ def account():
         account = Account()
         account.name = data["name"]
         account.user_id = user_id
+        account.state = True
 
         db.session.add(account)
         db.session.commit()
@@ -195,7 +195,6 @@ def delete_account(account_id):
     claims = get_jwt()
     user_id = claims.get("user_id")
  
-
     account = Account.query.filter_by(id=account_id, user_id=user_id).first()
     if account:
         db.session.delete(account)
@@ -203,6 +202,18 @@ def delete_account(account_id):
         return jsonify({"msg": "Account deleted"}), 200
     else:
         return jsonify({"msg": "Account not found"}), 404
+    
+@app.route("/account/state/<int:account_id>", methods=["PUT"])
+@jwt_required()
+def update_state_flow(account_id):
+    account = Account.query.filter_by(id=account_id).first()
+    if account is None:
+        return jsonify({"error": "Account not found"}), 404
+            
+    account.state = not account.state    
+    db.session.commit()
+    return jsonify(account.serialize()), 200
+ 
     
 @app.route('/add-movement', methods=['POST'])
 @jwt_required()

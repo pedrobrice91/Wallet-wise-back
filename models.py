@@ -21,7 +21,6 @@ class User(db.Model):
             "email": self.email,
             "created_at": self.created_at
         }
-
     
 class Account(db.Model):
     __tablename__ = "account"
@@ -29,16 +28,18 @@ class Account(db.Model):
     name = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.now())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    state = db.Column(db.Boolean, nullable=False)
     goal = db.relationship("Goal")
     movement = db.relationship("Movement")
 
     def serialize(self):
-        return {
-            "id":self.id,
-            "name":self.name,
-            "created_at":self.created_at,
-            "user_id":self.user_id
-        }
+            return {
+                "id":self.id,
+                "name":self.name,
+                "created_at":self.created_at,
+                "user_id":self.user_id,
+                "state":self.state
+            }
 
 class Goal(db.Model):
     __tablename__ = "goal"
