@@ -5,8 +5,6 @@ from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Account, Category
 from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
 from flask_cors import CORS
-import requests
-import jwt
 from functools import wraps
 import os
 from datetime import timedelta
@@ -175,7 +173,6 @@ def account():
     if request.method == "GET":
         accounts = Account.query.filter_by(user_id=user_id).all()
         accounts = list(map(lambda account: account.serialize(), accounts))
-
         return jsonify(accounts), 200
     
     if request.method == "POST":
@@ -183,6 +180,7 @@ def account():
         account = Account()
         account.name = data["name"]
         account.user_id = user_id
+        account.state = True
 
         db.session.add(account)
         db.session.commit()
@@ -196,7 +194,6 @@ def delete_account(account_id):
     claims = get_jwt()
     user_id = claims.get("user_id")
  
-
     account = Account.query.filter_by(id=account_id, user_id=user_id).first()
     if account:
         db.session.delete(account)
@@ -204,7 +201,18 @@ def delete_account(account_id):
         return jsonify({"msg": "Account deleted"}), 200
     else:
         return jsonify({"msg": "Account not found"}), 404
-
+    
+@app.route("/account/state/<int:account_id>", methods=["PUT"])
+@jwt_required()
+def update_state_flow(account_id):
+    account = Account.query.filter_by(id=account_id).first()
+    if account is None:
+        return jsonify({"error": "Account not found"}), 404
+            
+    account.state = not account.state    
+    db.session.commit()
+    return jsonify(account.serialize()), 200
+ 
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
