@@ -212,7 +212,8 @@ def update_state_flow(account_id):
     account.state = not account.state    
     db.session.commit()
     return jsonify(account.serialize()), 200
- 
+
+ #aqui comienza
 @app.route("/type_of_movements", methods=["GET"]) #Read
 def get_type_of_movements():
     type_of_movements = Type_of_movement.query.all()
@@ -345,5 +346,6 @@ def update_transaction(transaction_id):
             db.session.commit()
             return jsonify(f"transaction {transaction_id} deleted"), 200
 
+#aqui termina 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
