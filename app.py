@@ -5,11 +5,10 @@ from flask_bcrypt import Bcrypt
 from models import db, User, Type_of_movement, Transaction, Movement_goal, Movement, Goal, Account, Category
 from utils import is_valid_email, is_valid_password, find_user_by_email, hash_password, check_password
 from flask_cors import CORS
-import requests
 import jwt
 from functools import wraps
 import os
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
 app = Flask(__name__) 
@@ -204,6 +203,39 @@ def delete_account(account_id):
         return jsonify({"msg": "Account deleted"}), 200
     else:
         return jsonify({"msg": "Account not found"}), 404
+    
+@app.route('/add-movement', methods=['POST'])
+@jwt_required()
+def add_movement():
+    try:
+        user_id = get_jwt_identity() 
+        
+        data = request.get_json()
+        amount = data.get('amount')
+        transaction_date = data.get('transaction_date')
+        account_id = data.get('account_id')
+        transaction_id = data.get('transaction_id')
+        
+        if not all([amount, transaction_date, account_id, transaction_id]):
+            return jsonify({"error": "Missing required fields"}), 400
+        
+        transaction_date = datetime.strptime(transaction_date, '%Y-%m-%d')
+        
+        new_movement = Movement(
+            amount=amount,
+            transaction_date=transaction_date,
+            account_id=account_id,
+            transaction_id=transaction_id,
+            created_at=datetime.now()
+        )
+        
+        db.session.add(new_movement)
+        db.session.commit()
+        
+        return jsonify({"message": "Movement added successfully", "movement": new_movement.serialize()}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":

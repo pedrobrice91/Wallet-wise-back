@@ -33,12 +33,12 @@ class Account(db.Model):
     movement = db.relationship("Movement")
 
     def serialize(self):
-            return {
-                "id":self.id,
-                "name":self.name,
-                "created_at":self.created_at,
-                "user_id":self.user_id
-            }
+        return {
+            "id":self.id,
+            "name":self.name,
+            "created_at":self.created_at,
+            "user_id":self.user_id
+        }
 
 class Goal(db.Model):
     __tablename__ = "goal"
@@ -51,7 +51,7 @@ class Goal(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"))
     movement_goal = db.relationship("Movement_goal")
 
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
             "name":self.name,
@@ -65,21 +65,21 @@ def serialize(self):
 class Movement(db.Model):
     __tablename__ = "movement"
     id = db.Column(db.Integer, primary_key=True)
-    category = db.Column(db.String(200))
-    transaccion = db.Column(db.String(200))
     amount = db.Column(db.Integer)
+    transaction_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.now())
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"))
+    transaction_id = db.Column(db.Integer, db.ForeignKey("transaction.id"))
     movement_goal = db.relationship("Movement_goal")
 
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
-            "category":self.category,
-            "transaccion":self.transaccion,
             "amount":self.amount,
+            "transaction_date":self.transaction_date,
             "created_at":self.created_at,
             "account_id":self.account_id,
+            "transaction_id":self.transaction_id
         }
 
 class Movement_goal(db.Model):
@@ -88,10 +88,9 @@ class Movement_goal(db.Model):
     goal_id = db.Column(db.Integer, db.ForeignKey("goal.id"))
     movement_id = db.Column(db.Integer, db.ForeignKey("movement.id"))
     goal = db.relationship("Goal")
-    movement = db.relationship("Movement")
 
 
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
             "goal_id":self.goal_id,
@@ -106,7 +105,7 @@ class Transaction(db.Model):
     movement_id = db.Column(db.Integer, db.ForeignKey("movement.id")) 
     movement = db.relationship("Movement", backref=db.backref('transaction', lazy=True))  
 
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
             "name":self.name,
@@ -121,7 +120,7 @@ class Category(db.Model):
     type_of_movement_id = db.Column(db.Integer, db.ForeignKey("type_of_movement.id"))
     transaction = db.relationship("Transaction")
 
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
             "name":self.name,
@@ -134,7 +133,7 @@ class Type_of_movement(db.Model):
     name = db.Column(db.String(200))
     category = db.relationship("Category")
  
-def serialize(self):
+    def serialize(self):
         return {
             "id":self.id,
             "name":self.name
