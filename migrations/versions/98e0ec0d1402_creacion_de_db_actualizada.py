@@ -1,8 +1,8 @@
-"""nueva creacion con identacion corregida
+"""creacion de db actualizada
 
-Revision ID: 5fa22cec2aaf
+Revision ID: 98e0ec0d1402
 Revises: 
-Create Date: 2024-09-25 14:35:39.525418
+Create Date: 2024-09-25 17:04:35.882272
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '5fa22cec2aaf'
+revision = '98e0ec0d1402'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -58,6 +58,7 @@ def upgrade():
     sa.Column('name', sa.String(length=200), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('state', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
