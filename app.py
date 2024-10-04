@@ -382,6 +382,14 @@ def add_movement():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/movement/<int:account_id>", methods=["GET"])
+@jwt_required()
+def get_movement(account_id):
+    movement = Movement.query.filter_by(account_id=account_id).all()
+    
+    category = list(map(lambda category:category.serialize(), Category.query.all()))
+    movement = list(map(lambda movement:movement.serialize(), movement))
+    return jsonify({"movement": movement, "category": category})
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)

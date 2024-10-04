@@ -62,7 +62,20 @@ class Goal(db.Model):
             "monthly_contribution":self.monthly_contribution,
             "account_id":self.account_id
         }
+class Transaction(db.Model):
+    __tablename__ = "transaction"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200))
+    category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
+    movement = db.relationship("Movement")  
 
+    def serialize(self):
+        return {
+            "id":self.id,
+            "name":self.name,
+            "category_id":self.category_id
+        }
+    
 class Movement(db.Model):
     __tablename__ = "movement"
     id = db.Column(db.Integer, primary_key=True)
@@ -72,6 +85,7 @@ class Movement(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey("account.id"))
     transaction_id = db.Column(db.Integer, db.ForeignKey("transaction.id"))
     movement_goal = db.relationship("Movement_goal")
+    transaction = db.relationship("Transaction", uselist=False)
 
     def serialize(self):
         return {
@@ -80,8 +94,15 @@ class Movement(db.Model):
             "transaction_date":self.transaction_date,
             "created_at":self.created_at,
             "account_id":self.account_id,
-            "transaction_id":self.transaction_id
+            "transaction_id":self.transaction_id,
+            "transaction":self.transaction.name,
+            "category":self.category()
         }
+
+    def category(self):
+        categoria = Category.query.filter_by(id=self.transaction.category_id).first()
+        return categoria.name
+
 
 class Movement_goal(db.Model):
     __tablename__ = "movement_goal"
@@ -96,19 +117,7 @@ class Movement_goal(db.Model):
             "movement_id":self.movement_id
         }
 
-class Transaction(db.Model):
-    __tablename__ = "transaction"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200))
-    category_id = db.Column(db.Integer, db.ForeignKey("category.id"))
-    movement = db.relationship("Movement", backref=db.backref('transaction', lazy=True))  
 
-    def serialize(self):
-        return {
-            "id":self.id,
-            "name":self.name,
-            "category_id":self.category_id
-        }
 
 class Category(db.Model):
     __tablename__ = "category"
@@ -121,7 +130,7 @@ class Category(db.Model):
         return {
             "id":self.id,
             "name":self.name,
-            "type_of_movement_id":self.type_of_movement_id
+            # "type_of_movement_id":self.category_id
         }
 
 class Type_of_movement(db.Model):
