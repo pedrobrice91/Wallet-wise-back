@@ -9,9 +9,12 @@ import jwt
 from functools import wraps
 import os
 from datetime import timedelta, datetime
+from sqlalchemy import func
+from unidecode import unidecode
 
 
-app = Flask(__name__) 
+
+app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet-wise.db"
 app.config["JWT_SECRET_KEY"] = "secret_key"
 app.config["SECRET_KEY"] = "contrasena-super-segura"
@@ -51,7 +54,7 @@ def user():
 
     additional_claims = {"user_id": user.id}
     access_token = create_access_token(identity=data["email"], additional_claims=additional_claims)
- 
+
     return jsonify({
         "msg": "Success",
             "access_token": access_token,
@@ -65,20 +68,20 @@ def user():
 def login_google():
     #comprobar que la información del front llegue al backend
     data = request.get_json()
-    expires = timedelta(days=3)    
+    expires = timedelta(days=3)
     user = User.query.filter_by(email=data["email"]).first()
-   
+
     if user is not None:
         additional_claims = {"user_id": user.id}
         access_token = create_access_token(identity=data["email"], additional_claims=additional_claims, expires_delta=expires)
- 
+
         return jsonify({
             "msg":"Success",
             "access_token": access_token,
         }), 200
     else:
         user = User()
-        
+
         user.first_name = data["first_name"]
         user.last_name = data["last_name"]
         user.email = data["email"]
@@ -105,7 +108,7 @@ def login():
 
     if not email or not is_valid_email(email):
         return jsonify({"msg": "Invalid email format"}), 400
-    
+
     user = find_user_by_email(email)
     if user and check_password(user.password, password, bcrypt):
         additional_claims = {"user_id": user.id}
@@ -125,7 +128,7 @@ def login():
 def get_users():
     users = User.query.all()
     users = list(map(lambda user: user.serialize(), users))
-    
+
     return jsonify(users)
 
 @app.route("/user/<int:user_id>", methods=["PUT", "DELETE"])
@@ -134,14 +137,14 @@ def update_user(user_id):
 
         if user is None:
             return jsonify("User not found"), 404
-        
+
         if request.method == "PUT": #Update
             data = request.get_json()
 
             if data.get("email"):
                return jsonify("The email can't be updated"), 400
-            
-            if data.get("first_name"):           
+
+            if data.get("first_name"):
                 user.first_name = data["first_name"]
 
             if data.get("last_name"):
@@ -149,7 +152,7 @@ def update_user(user_id):
 
             if data.get("password"):
                 user.password = data["password"]
-          
+
             db.session.commit()
             return jsonify(user.serialize()), 200
 
@@ -157,7 +160,7 @@ def update_user(user_id):
             db.session.delete(user)
             db.session.commit()
             return jsonify(f"User {user_id} deleted"), 200
-          
+
 @app.route("/account", methods=["GET", "POST"])
 @jwt_required()
 def account():
@@ -166,7 +169,7 @@ def account():
 
     if not user_id:
         return jsonify({"msg": "Invalid token"}), 401
-    
+
     user = User.query.get(user_id)
     if not user:
         return jsonify({"msg": "User not found"}), 403
@@ -175,7 +178,7 @@ def account():
         accounts = Account.query.filter_by(user_id=user_id).all()
         accounts = list(map(lambda account: account.serialize(), accounts))
         return jsonify(accounts), 200
-    
+
     if request.method == "POST":
         data = request.get_json()
         account = Account()
@@ -188,13 +191,13 @@ def account():
         return jsonify(
             {"Msg": "Account created successfully"}
         ), 201
-    
+
 @app.route("/account/<int:account_id>", methods=["DELETE"])
 @jwt_required()
 def delete_account(account_id):
     claims = get_jwt()
     user_id = claims.get("user_id")
- 
+
     account = Account.query.filter_by(id=account_id, user_id=user_id).first()
     if account:
         db.session.delete(account)
@@ -202,15 +205,15 @@ def delete_account(account_id):
         return jsonify({"msg": "Account deleted"}), 200
     else:
         return jsonify({"msg": "Account not found"}), 404
-    
+
 @app.route("/account/state/<int:account_id>", methods=["PUT"])
 @jwt_required()
 def update_state_flow(account_id):
     account = Account.query.filter_by(id=account_id).first()
     if account is None:
         return jsonify({"error": "Account not found"}), 404
-            
-    account.state = not account.state    
+
+    account.state = not account.state
     db.session.commit()
     return jsonify(account.serialize()), 200
 
@@ -225,15 +228,15 @@ def get_type_of_movements():
 @app.route("/type_of_movement", methods=["POST"])#Create
 def type_of_movement():
         data = request.get_json()
-        
+
         if isinstance(data, list):
             if len(data) == 0:
                 return jsonify({"error": "No se proporcionaron datos"}), 400
             data = data[0]
-        
+
         if "name" not in data:
             return jsonify({"error": "El campo 'name' es requerido"}), 400
-        
+
         type_of_movement = Type_of_movement()
         type_of_movement.name = data["name"]
 
@@ -258,16 +261,16 @@ def update_category(category_id):
 
         if category is None:
             return jsonify("category not found"), 404
-        
+
         if request.method == "PUT": #Update
             data = request.get_json()
-            
-            if data.get("name"):           
+
+            if data.get("name"):
                 category.name = data["name"]
 
             if data.get("type_of_movement_id"):
                 category.type_of_movement_id = data["type_of_movement_id"]
-          
+
             db.session.commit()
             return jsonify(category.serialize()), 200
 
@@ -278,20 +281,20 @@ def update_category(category_id):
 #transacciones
 @app.route("/category", methods=["POST"])#Create
 def category():
-    
+
         data = request.get_json()
-        
+
         if not data:
             return jsonify({"error": "No se proporcionaron datos"}), 400
-        
+
         category = Category()
-        
+
         if "name" not in data or "type_of_movement_id" not in data:
             return jsonify({"error": "Faltan campos requeridos (name o type_of_movement_id)"}), 400
-        
+
         category.name = data["name"]
         category.type_of_movement_id = data["type_of_movement_id"]
-        
+
         db.session.add(category)
         db.session.commit()
 
@@ -306,18 +309,28 @@ def get_transaction():
 @app.route("/transaction", methods=["POST"])#Create
 def transaction():
         data = request.get_json()
-        
+
         if not data:
             return jsonify({"error": "No se proporcionaron datos"}), 400
-        
+
         transaction = Transaction()
-        
+
         if "name" not in data or "category_id" not in data:
             return jsonify({"error": "Faltan campos requeridos (name o category_id)"}), 400
+
+        normalized_name = unidecode(data["name"]).lower()
+        existing_transaction = Transaction.query.filter(
+            func.lower(Transaction.name) == normalized_name
+        ).first()
         
-        transaction.name = data["name"]
-        transaction.category_id = data["category_id"]
-        
+        if existing_transaction:
+            return jsonify({"error": "Transaction with this name already exists."}), 400
+
+        transaction = Transaction(
+            name=data["name"],
+            category_id=data["category_id"]
+        )
+
         db.session.add(transaction)
         db.session.commit()
 
@@ -326,10 +339,10 @@ def transaction():
 @app.route("/transaction/<int:transaction_id>", methods=["PUT", "DELETE"])
 def update_transaction(transaction_id):
         transaction = Transaction.query.get(transaction_id)
-        
+
         if transaction is None:
             return jsonify("Transaction not found"), 404
-        
+
         if request.method == "PUT": #Update
             data = request.get_json()
 
@@ -347,25 +360,31 @@ def update_transaction(transaction_id):
             db.session.commit()
             return jsonify(f"transaction {transaction_id} deleted"), 200
 
-#aqui termina 
- 
+#aqui termina
+
 @app.route('/add-movement', methods=['POST'])
 @jwt_required()
 def add_movement():
     try:
-        user_id = get_jwt_identity() 
-        
+        user_id = get_jwt_identity()
+
         data = request.get_json()
         amount = data.get('amount')
         transaction_date = data.get('transaction_date')
         account_id = data.get('account_id')
         transaction_id = data.get('transaction_id')
-        
+      
+
         if not all([amount, transaction_date, account_id, transaction_id]):
             return jsonify({"error": "Missing required fields"}), 400
-        
+
         transaction_date = datetime.strptime(transaction_date, '%Y-%m-%d')
-        
+        transaction = Transaction.query.get(transaction_id)
+
+
+        goal_name = transaction.name
+        print(goal_name)
+
         new_movement = Movement(
             amount=amount,
             transaction_date=transaction_date,
@@ -373,23 +392,181 @@ def add_movement():
             transaction_id=transaction_id,
             created_at=datetime.now()
         )
-        
+
         db.session.add(new_movement)
         db.session.commit()
+
+        if transaction.category_id == 2:
+            goal = Goal.query.filter(
+                Goal.name.ilike(goal_name),
+                Goal.account_id == account_id
+            ).first()
         
-        return jsonify({"message": "Movement added successfully", "movement": new_movement.serialize()}), 201
+            if goal:
+                new_movement_goal = Movement_goal(
+                    movement_id=new_movement.id,
+                    goal_id=goal.id,
+                )
+                db.session.add(new_movement_goal)
+                db.session.commit()
+
+        return jsonify({
+            "message": "Movement added successfully", 
+            "movement": new_movement.serialize()
+        }), 201
 
     except Exception as e:
+        print(f"Error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/movement/<int:account_id>", methods=["GET"])
 @jwt_required()
 def get_movement(account_id):
     movement = Movement.query.filter_by(account_id=account_id).all()
-    
+
     category = list(map(lambda category:category.serialize(), Category.query.all()))
     movement = list(map(lambda movement:movement.serialize(), movement))
     return jsonify({"movement": movement, "category": category})
+
+@app.route("/goal/<int:account_id>", methods=["POST", "GET"])
+@jwt_required()
+def goal(account_id):
+    data = request.get_json() if request.method == "POST" else None
+
+    account = Account.query.get(account_id)
+    if not account:
+        return jsonify({"message": "Account ID does not exist"}), 404
+
+    if request.method == "GET":
+        goals = Goal.query.filter_by(account_id=account_id).all()
+
+        if not goals:
+            return jsonify([]), 200
+
+        goals = list(map(lambda goal: goal.serialize(), goals))
+        return jsonify(goals), 200
+
+    if request.method == "POST":
+        normalized_name = unidecode(data["name"]).lower()
+
+        existing_goal = Goal.query.filter(
+            func.lower(Goal.name) == normalized_name,
+            Goal.account_id == account_id
+        ).first()        
+        if existing_goal:
+            return jsonify({"message": "Goal with this name already exists for this account."}), 400
+
+        goal = Goal(
+            name = data["name"],
+            fulfillment_amount = data["fulfillment_amount"],
+            estimated_monthly = data["estimated_monthly"],
+            monthly_contribution = data["monthly_contribution"],
+            account_id = account_id
+        )
+
+        db.session.add(goal)
+        db.session.commit()
+
+        transaction = Transaction(
+            name=f"{goal.name}",
+            category_id = 2
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        return jsonify({"message": "Movement added successfully"}, 201)
+
+@app.route("/goal-by-account/<int:id>", methods=["DELETE", "PUT"])
+@jwt_required()
+def goal_action(id):
+    goal = Goal.query.filter_by(id=id).first()
+
+    if goal is None:
+        return jsonify({"error": "Goal not found"}), 404
+
+    if request.method == "DELETE":
+        transaction = Transaction.query.filter_by(name=goal.name).first()
+        
+        if transaction:
+            db.session.delete(transaction)
+            print(f"Transaction {transaction.id} deleted")
+
+        db.session.delete(goal)
+        db.session.commit()
+
+        return jsonify(f"Goal {id} deleted"), 200
+
+    if request.method == "PUT":
+        data = request.get_json()
+
+        if "account_id" in data:
+            return jsonify({"error": "account_id cannot be modified"}), 400
+
+        if data.get("name"):
+            goal.name = data["name"]
+        
+        if data.get("fulfillment_amount"):
+            goal.fulfillment_amount = data["fulfillment_amount"]
+
+        if data.get("estimated_monthly"):
+            goal.estimated_monthly = data["estimated_monthly"]
+
+        if data.get("monthly_contribution"):
+            goal.monthly_contribution = data["monthly_contribution"]
+
+        if data.get("created_at"):
+            try:
+                goal.created_at = datetime.strptime(data["created_at"], "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                return jsonify({"error": "Invalid date format. Use 'YYYY-MM-DD HH:MM:SS'"}), 400
+
+
+            db.session.commit()
+            return jsonify(goal.serialize()), 200
+
+@app.route("/total-contributed/<int:account_id>", methods=["GET"])
+@jwt_required()
+def total_contributed(account_id):
+    try:
+        goals = Goal.query.filter_by(account_id=account_id).all()
+        new_goal = []
+        current_date = datetime.now()
+
+        for goal in goals:
+            movement_goal = Movement_goal.query.filter_by(goal_id=goal.id).all()
+            movement_ids = [mgw.movement_id for mgw in movement_goal]
+
+            total_contributed = db.session.query(
+                db.func.sum(Movement.amount)
+            ).filter(Movement.id.in_(movement_ids)).scalar()
+
+            if goal.created_at:
+                months_passed = (current_date.year - goal.created_at.year) * 12 + (current_date.month - goal.created_at.month)
+                  
+                if goal.estimated_monthly is not None:
+                    remaining_time = max(int(goal.estimated_monthly) - months_passed, 0)
+                else:
+                    remaining_time = 0
+            else:
+                remaining_time = 0 
+            
+            monthly_contribution = int(goal.monthly_contribution) if goal.monthly_contribution else 0
+            estimated_contribution = months_passed * monthly_contribution
+
+            new_goal.append({
+                **goal.serialize(),
+                "total_contributed": total_contributed or 0, 
+                "remaining_time": remaining_time,
+                "estimated_contribution": estimated_contribution
+            })
+
+        
+        return jsonify(new_goal), 200
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)

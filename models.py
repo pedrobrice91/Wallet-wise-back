@@ -62,6 +62,7 @@ class Goal(db.Model):
             "monthly_contribution":self.monthly_contribution,
             "account_id":self.account_id
         }
+    
 class Transaction(db.Model):
     __tablename__ = "transaction"
     id = db.Column(db.Integer, primary_key=True)
