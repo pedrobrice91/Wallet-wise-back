@@ -62,6 +62,7 @@ class Goal(db.Model):
             "monthly_contribution":self.monthly_contribution,
             "account_id":self.account_id
         }
+    
 class Transaction(db.Model):
     __tablename__ = "transaction"
     id = db.Column(db.Integer, primary_key=True)
@@ -130,7 +131,7 @@ class Category(db.Model):
         return {
             "id":self.id,
             "name":self.name,
-            # "type_of_movement_id":self.category_id
+            "type_of_movement_id":self.type_of_movement_id
         }
 
 class Type_of_movement(db.Model):
