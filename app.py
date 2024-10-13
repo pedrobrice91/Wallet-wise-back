@@ -501,6 +501,12 @@ def goal_action(id):
 
         if "account_id" in data:
             return jsonify({"error": "account_id cannot be modified"}), 400
+        
+        transaction = Transaction.query.filter_by(name=goal.name).first()
+
+        if transaction: 
+            if data.get("name"):
+                transaction.name = data["name"]
 
         if data.get("name"):
             goal.name = data["name"]
@@ -521,8 +527,8 @@ def goal_action(id):
                 return jsonify({"error": "Invalid date format. Use 'YYYY-MM-DD HH:MM:SS'"}), 400
 
 
-            db.session.commit()
-            return jsonify(goal.serialize()), 200
+        db.session.commit()
+        return jsonify(goal.serialize()), 200
 
 @app.route("/total-contributed/<int:account_id>", methods=["GET"])
 @jwt_required()
