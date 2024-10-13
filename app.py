@@ -426,7 +426,7 @@ def get_movement(account_id):
 
     category = list(map(lambda category:category.serialize(), Category.query.all()))
     movement = list(map(lambda movement:movement.serialize(), movement))
-    return jsonify({"movement": movement, "category": category})
+    return jsonify({"movement": movement, "category": category}), 200
 
 @app.route("/goal/<int:account_id>", methods=["POST", "GET"])
 @jwt_required()
