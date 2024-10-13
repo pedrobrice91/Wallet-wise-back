@@ -217,6 +217,7 @@ def update_state_flow(account_id):
     db.session.commit()
     return jsonify(account.serialize()), 200
 
+ #aqui comienza
 @app.route("/type_of_movements", methods=["GET"]) #Read
 def get_type_of_movements():
     type_of_movements = Type_of_movement.query.all()
@@ -246,24 +247,7 @@ def type_of_movement():
 
 @app.route("/type_of_movement/<int:type_of_movements_id>", methods=["PUT", "DELETE"])
 def update_type_of_movement(type_of_movements_id):
-        type_of_movement = Type_of_movement.query.get(type_of_movements_id)
-
-        if type_of_movement is None:
-            return jsonify("type of movement not found"), 404
-        
-        if request.method == "PUT": #Update
-            data = request.get_json()
-            
-            if data.get("name"):           
-                type_of_movement.name = data["name"]
-
-            db.session.commit()
-            return jsonify(type_of_movement.serialize()), 200
-
-        if request.method == "DELETE":  # Delete
-            db.session.delete(type_of_movement)
-            db.session.commit()
-            return jsonify(f"Movement {type_of_movements_id} deleted"), 200
+        return jsonify({"msg": "Transacción creada"}), 201
 
 @app.route("/categorys", methods=["GET"])#Read
 def get_category():
@@ -294,7 +278,7 @@ def update_category(category_id):
             db.session.delete(category)
             db.session.commit()
             return jsonify(f"Category {category_id} deleted"), 200
-
+#transacciones
 @app.route("/category", methods=["POST"])#Create
 def category():
 
