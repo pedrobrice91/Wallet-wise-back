@@ -11,7 +11,8 @@ import os
 from datetime import timedelta, datetime
 from sqlalchemy import func
 from unidecode import unidecode
-
+from flask_mail import Mail, Message
+import requests
 
 
 app = Flask(__name__)
@@ -23,6 +24,15 @@ bcrypt = Bcrypt(app)
 db.init_app(app)
 Migrate(app, db)
 CORS(app)
+
+#configuración de mail
+app.config["MAIL_SERVER"] = 'smtp.gmail.com'
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "walletwise02@gmail.com"
+app.config["MAIL_PASSWORD"] = "potl dfde zjcp ugvs"
+mail= Mail(app)
+
 
 
 @app.route("/user", methods=["POST"])
@@ -322,7 +332,7 @@ def transaction():
         existing_transaction = Transaction.query.filter(
             func.lower(Transaction.name) == normalized_name
         ).first()
-        
+
         if existing_transaction:
             return jsonify({"error": "Transaction with this name already exists."}), 400
 
@@ -361,20 +371,19 @@ def update_transaction(transaction_id):
             db.session.commit()
             return jsonify(f"transaction {transaction_id} deleted"), 200
 
-#aqui termina
 
 @app.route('/add-movement', methods=['POST'])
 @jwt_required()
 def add_movement():
     try:
         user_id = get_jwt_identity()
-
+       
         data = request.get_json()
         amount = data.get('amount')
         transaction_date = data.get('transaction_date')
         account_id = data.get('account_id')
         transaction_id = data.get('transaction_id')
-      
+
 
         if not all([amount, transaction_date, account_id, transaction_id]):
             return jsonify({"error": "Missing required fields"}), 400
@@ -382,10 +391,9 @@ def add_movement():
         transaction_date = datetime.strptime(transaction_date, '%Y-%m-%d')
         transaction = Transaction.query.get(transaction_id)
 
-
         goal_name = transaction.name
-        print(goal_name)
-
+        recipient_email = user_id
+        
         new_movement = Movement(
             amount=amount,
             transaction_date=transaction_date,
@@ -402,7 +410,7 @@ def add_movement():
                 Goal.name.ilike(goal_name),
                 Goal.account_id == account_id
             ).first()
-        
+
             if goal:
                 new_movement_goal = Movement_goal(
                     movement_id=new_movement.id,
@@ -411,8 +419,16 @@ def add_movement():
                 db.session.add(new_movement_goal)
                 db.session.commit()
 
+                total_contributed = db.session.query(
+                    db.func.sum(Movement.amount)
+                ).join(Movement_goal, Movement.id == Movement_goal.movement_id) \
+                 .filter(Movement_goal.goal_id == goal.id).scalar()
+
+                if total_contributed >= int(goal.fulfillment_amount):
+                    send_email_goal_ok(goal.name, recipient_email)
+
         return jsonify({
-            "message": "Movement added successfully", 
+            "message": "Movement added successfully",
             "movement": new_movement.serialize()
         }), 201
 
@@ -453,7 +469,7 @@ def goal(account_id):
         existing_goal = Goal.query.filter(
             func.lower(Goal.name) == normalized_name,
             Goal.account_id == account_id
-        ).first()        
+        ).first()
         if existing_goal:
             return jsonify({"message": "Goal with this name already exists for this account."}), 400
 
@@ -487,7 +503,7 @@ def goal_action(id):
 
     if request.method == "DELETE":
         transaction = Transaction.query.filter_by(name=goal.name).first()
-        
+
         if transaction:
             db.session.delete(transaction)
             print(f"Transaction {transaction.id} deleted")
@@ -502,16 +518,16 @@ def goal_action(id):
 
         if "account_id" in data:
             return jsonify({"error": "account_id cannot be modified"}), 400
-        
+
         transaction = Transaction.query.filter_by(name=goal.name).first()
 
-        if transaction: 
+        if transaction:
             if data.get("name"):
                 transaction.name = data["name"]
 
         if data.get("name"):
             goal.name = data["name"]
-        
+
         if data.get("fulfillment_amount"):
             goal.fulfillment_amount = data["fulfillment_amount"]
 
@@ -549,31 +565,43 @@ def total_contributed(account_id):
 
             if goal.created_at:
                 months_passed = (current_date.year - goal.created_at.year) * 12 + (current_date.month - goal.created_at.month)
-                  
+
                 if goal.estimated_monthly is not None:
                     remaining_time = max(int(goal.estimated_monthly) - months_passed, 0)
                 else:
                     remaining_time = 0
             else:
-                remaining_time = 0 
-            
+                remaining_time = 0
+
             monthly_contribution = int(goal.monthly_contribution) if goal.monthly_contribution else 0
             estimated_contribution = months_passed * monthly_contribution
 
             new_goal.append({
                 **goal.serialize(),
-                "total_contributed": total_contributed or 0, 
+                "total_contributed": total_contributed or 0,
                 "remaining_time": remaining_time,
                 "estimated_contribution": estimated_contribution
             })
 
-        
+
         return jsonify(new_goal), 200
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route("/send_email_goal_ok", methods=["POST"])
+@jwt_required()
+def send_email_goal_ok(goal_name, recipient_email):
+    msg = Message(
+        'Hello Walletwise',
+        sender='walletwise02@gmail.com',
+        recipients=[recipient_email]
+    )
+    msg.body = f"Congratulations, you have reached your goal. '{goal_name}'"
+    mail.send(msg)
+
+    return "Email sent", 200
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5050, debug=True)
