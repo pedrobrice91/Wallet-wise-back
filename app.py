@@ -337,6 +337,7 @@ def transaction():
         return jsonify({"msg": "Transacción creada"}), 201
 
 @app.route("/transaction/<int:transaction_id>", methods=["PUT", "DELETE"])
+@jwt_required()
 def update_transaction(transaction_id):
         transaction = Transaction.query.get(transaction_id)
 
