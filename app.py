@@ -12,7 +12,6 @@ from datetime import timedelta, datetime
 from sqlalchemy import func
 from unidecode import unidecode
 from flask_mail import Mail, Message
-import requests
 
 
 app = Flask(__name__)
